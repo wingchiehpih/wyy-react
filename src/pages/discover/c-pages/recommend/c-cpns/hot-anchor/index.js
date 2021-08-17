@@ -1,9 +1,9 @@
 import React, { memo } from 'react';
 
-export default memo(function UserLogin() {
+export default memo(function HotAnchor() {
   return (
     <div>
-      <h2>UserLogin</h2>
+      <h2>HotAnchor</h2>
     </div>
   );
 });

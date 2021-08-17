@@ -5,7 +5,14 @@ import React, { memo } from 'react';
 
 // import { getTopBannerAction } from './store/actionCreators';
 import TopBanner from './c-cpns/top-banner';
-import { RecommendWrapper } from './style';
+import HotRecommend from './c-cpns/hot-recommend';
+import NewAlbum from './c-cpns/new-album';
+import RecommendRanking from './c-cpns/recommend-ranking';
+import UserLogin from './c-cpns/user-login';
+import SettleSinger from './c-cpns/settle-singer';
+import HotAnchor from './c-cpns/hot-anchor';
+
+import { RecommendWrapper, Content, RecommendLeft, RecommendRight } from './style';
 
 // store中使用redux-immutable合并代码后，需要通过immutable中的get方式拿到recommend对象，immutable优化后代码
 // 使用hooks重构
@@ -29,7 +36,19 @@ function Recommend() {
   // }, [dispatch]);
   return (
     <RecommendWrapper>
-      <TopBanner></TopBanner>
+      <TopBanner />
+      <Content className='wrap-v2'>
+        <RecommendLeft>
+          <HotRecommend />
+          <NewAlbum />
+          <RecommendRanking />
+        </RecommendLeft>
+        <RecommendRight>
+          <UserLogin />
+          <SettleSinger />
+          <HotAnchor />
+        </RecommendRight>
+      </Content>
     </RecommendWrapper>
   );
 }
