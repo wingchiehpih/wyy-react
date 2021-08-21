@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
-// import { useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 
 import { getSizeImage } from '@/utils/format-utils';
-// import { getSongDetailAction } from '@/pages/player/store';
+import { getSongDetailAction } from '@/pages/player/store';
 
 import { TopRankingWrapper } from './style';
 
@@ -12,11 +12,11 @@ export default memo(function TopRanking(props) {
   const { tracks = [] } = info;
 
   // redux hooks
-  // const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
   // other handle
   const playMusic = item => {
-    // dispatch(getSongDetailAction(item.id));
+    dispatch(getSongDetailAction(item.id));
   };
 
   return (

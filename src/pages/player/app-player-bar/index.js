@@ -1,8 +1,14 @@
 import React, { memo, useEffect, useRef, useState, useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { Slider } from 'antd';
+import { NavLink } from 'react-router-dom';
+
 import { getSizeImage, formatDate, getPlaySong } from '@/utils/format-utils';
-import { getSongDetailAction } from '../store/actionCreators';
+import {
+  changeSequenceAction,
+  getSongDetailAction,
+  changeCurrentIndexAndSongAction,
+} from '../store/actionCreators';
 
 import { PlaybarWrapper, Control, PlayInfo, Operator } from './style';
 
@@ -12,9 +18,11 @@ export default memo(function AppPlayerBar() {
   const [isChanging, setIsChanging] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   // 获取 redux中保存的数据
-  const { currentSong } = useSelector(
+  const { currentSong, sequence, playList } = useSelector(
     state => ({
       currentSong: state.getIn(['player', 'currentSong']),
+      sequence: state.getIn(['player', 'sequence']),
+      playList: state.getIn(['player', 'playList']),
     }),
     shallowEqual
   );
@@ -26,6 +34,14 @@ export default memo(function AppPlayerBar() {
   }, [dispatch]);
   useEffect(() => {
     audioRef.current.src = getPlaySong(currentSong.id);
+    audioRef.current
+      .play()
+      .then(res => {
+        setIsPlaying(true);
+      })
+      .catch(err => {
+        setIsPlaying(false);
+      });
   }, [currentSong]);
   // 判断是否有值，有值则使用curren中请求到的值，如果没有则使用占位符后面的值
   const picUrl = (currentSong.al && currentSong.al.picUrl) || '';
@@ -36,10 +52,8 @@ export default memo(function AppPlayerBar() {
 
   const playMusic = useCallback(() => {
     if (!isPlaying) {
-      console.log('BOFANG');
       audioRef.current.play();
     } else {
-      console.log('暂停');
       audioRef.current.pause();
     }
     setIsPlaying(!isPlaying);
@@ -53,12 +67,6 @@ export default memo(function AppPlayerBar() {
   };
   const showCurrentTime = formatDate(currentTime, 'mm:ss');
 
-  // const sliderChange = useCallback(value => {
-  //   setProgress(value);
-  // }, []);
-  // const sliderAfterChange = useCallback(() => {
-  //   console.log('end');
-  // }, []);
   const sliderChange = useCallback(
     value => {
       setIsChanging(true);
@@ -83,19 +91,41 @@ export default memo(function AppPlayerBar() {
     [duration, isPlaying, playMusic]
   );
   // 当把一个回调函数传到自定义组件内部时，使用callback钩子
+  const changeSequence = () => {
+    let currentSequence = sequence + 1;
+    if (currentSequence > 2) {
+      currentSequence = 0;
+    }
+    dispatch(changeSequenceAction(currentSequence));
+  };
+
+  // 点击进入前一首后一首歌曲
+  const changeMusic = tag => {
+    dispatch(changeCurrentIndexAndSongAction(tag));
+  };
+  // 监听歌曲播放结束后的执行事件
+  const handleMusicEnded = () => {
+    // 单曲循环的情况
+    if (sequence === 2) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+    } else {
+      dispatch(changeCurrentIndexAndSongAction(1));
+    }
+  };
   return (
     <PlaybarWrapper className='sprite_player'>
       <div className='content wrap-v2'>
         <Control isPlaying={isPlaying}>
-          <button className='sprite_player prev'></button>
+          <button className='sprite_player prev' onClick={e => changeMusic(-1)}></button>
           <button className='sprite_player play' onClick={playMusic}></button>
-          <button className='sprite_player next'></button>
+          <button className='sprite_player next' onClick={e => changeMusic(-1)}></button>
         </Control>
         <PlayInfo>
           <div className='image'>
-            <a href='/#'>
+            <NavLink to='/discover/player'>
               <img src={getSizeImage(picUrl, 35)} alt='' />
-            </a>
+            </NavLink>
           </div>
           <div className='info'>
             <div className='song'>
@@ -119,19 +149,19 @@ export default memo(function AppPlayerBar() {
             </div>
           </div>
         </PlayInfo>
-        <Operator>
+        <Operator sequence={sequence}>
           <div className='left'>
             <button className='sprite_player btn favor'></button>
             <button className='sprite_player btn share'></button>
           </div>
           <div className='right sprite_player'>
             <button className='sprite_player btn volume'></button>
-            <button className='sprite_player btn loop'></button>
-            <button className='sprite_player btn playlist'></button>
+            <button className='sprite_player btn loop' onClick={changeSequence}></button>
+            <button className='sprite_player btn playlist'>{playList.length}</button>
           </div>
         </Operator>
       </div>
-      <audio ref={audioRef} onTimeUpdate={timeUpdate} />
+      <audio ref={audioRef} onTimeUpdate={timeUpdate} onEnded={handleMusicEnded} />
     </PlaybarWrapper>
   );
 });
