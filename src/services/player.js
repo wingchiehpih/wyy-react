@@ -8,6 +8,7 @@ export function getSongDetail(ids) {
     },
   });
 }
+// 请求歌手数据
 export function getLyric(id) {
   return request({
     url: '/lyric',

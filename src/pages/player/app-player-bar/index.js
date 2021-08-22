@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef, useState, useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
-import { Slider } from 'antd';
+import { Slider, message } from 'antd';
 import { NavLink } from 'react-router-dom';
 
 import { getSizeImage, formatDate, getPlaySong } from '@/utils/format-utils';
@@ -8,6 +8,7 @@ import {
   changeSequenceAction,
   getSongDetailAction,
   changeCurrentIndexAndSongAction,
+  changeCurrentLyricIndexAction,
 } from '../store/actionCreators';
 
 import { PlaybarWrapper, Control, PlayInfo, Operator } from './style';
@@ -18,11 +19,13 @@ export default memo(function AppPlayerBar() {
   const [isChanging, setIsChanging] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   // 获取 redux中保存的数据
-  const { currentSong, sequence, playList } = useSelector(
+  const { currentSong, sequence, playList, currentLyricIndex, lyricList } = useSelector(
     state => ({
       currentSong: state.getIn(['player', 'currentSong']),
       sequence: state.getIn(['player', 'sequence']),
       playList: state.getIn(['player', 'playList']),
+      lyricList: state.getIn(['player', 'lyricList']),
+      currentLyricIndex: state.getIn(['player', 'currentLyricIndex']),
     }),
     shallowEqual
   );
@@ -60,9 +63,30 @@ export default memo(function AppPlayerBar() {
   }, [isPlaying]);
 
   const timeUpdate = e => {
-    setCurrentTime(e.target.currentTime * 1000);
+    const currentTime = e.target.currentTime;
     if (!isChanging) {
-      setProgress((currentTime / duration) * 100);
+      setCurrentTime(currentTime * 1000);
+      setProgress(((currentTime * 1000) / duration) * 100);
+    }
+
+    // 获取当前的歌词
+    let i = 0;
+    for (; i < lyricList.length; i++) {
+      let lyricItem = lyricList[i];
+      if (currentTime * 1000 < lyricItem.time) {
+        break;
+      }
+    }
+    // 性能优化
+    if (currentLyricIndex !== i - 1) {
+      dispatch(changeCurrentLyricIndexAction(i - 1));
+      const content = lyricList[i - 1] && lyricList[i - 1].content;
+      message.open({
+        key: 'lyric',
+        content: content,
+        duration: 0,
+        className: 'lyric-class',
+      });
     }
   };
   const showCurrentTime = formatDate(currentTime, 'mm:ss');
@@ -106,7 +130,7 @@ export default memo(function AppPlayerBar() {
   // 监听歌曲播放结束后的执行事件
   const handleMusicEnded = () => {
     // 单曲循环的情况
-    if (sequence === 2) {
+    if (sequence === 2 || playList.length === 1) {
       audioRef.current.currentTime = 0;
       audioRef.current.play();
     } else {
@@ -135,6 +159,7 @@ export default memo(function AppPlayerBar() {
               </a>
               <div className='progress'>
                 <Slider
+                  tooltipVisible={false}
                   defaultValue={0}
                   value={progress}
                   onChange={sliderChange}

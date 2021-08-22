@@ -40,11 +40,10 @@ export const changeCurrentIndexAndSongAction = tag => {
     const playList = getState().getIn(['player', 'playList']);
     const sequence = getState().getIn(['player', 'sequence']);
     let currentSongIndex = getState().getIn(['player', 'currentSongIndex']);
-
+    // 随机播放完成后自动切换到下一首存在bug，设置单曲循环后通过按钮点击切换下一首存在bug
     switch (sequence) {
-      // 随机播放存在BUG
       case 1: // 随机播放
-        let randomIndex = playList.length;
+        let randomIndex = getRandomNumber(playList.length);
         while (randomIndex === currentSongIndex) {
           randomIndex = getRandomNumber(playList.length);
         }
